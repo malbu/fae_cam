@@ -315,33 +315,23 @@ def main(device_id, width, display_width):
 		# Initialize rotation angle
     		rotation_angle = 0
 
-		# Keep track of the last 4 frames
-		frames = [None, None, None, None]
+		prev_frame = None  # Initialize a variable to hold the previous frame
 
                 while True:
 			if(start_angle==360):
 				start_angle=0
 			
-        		if(frame_num % 20 >= 0 and frame_num % 20 < 4):  # Capture every 20th, 21st, 22nd, 23rd frames
+        		if(frame_num % 20 == 0):
         			ret, frame = cam.read()
         			frame = cv2.resize(frame, (width, height))
         			frame = cv2.flip(frame, 1)
 
-        			frames[frame_num % 4] = frame  # Store the current frame in the frames list
+        			if prev_frame is not None:
+            				alpha = 0.5  # weight for the current frame
+            				beta = 1.0 - alpha  # weight for the previous frame
+            				frame = cv2.addWeighted(frame, alpha, prev_frame, beta, 0.0)
 
-        		# Start blending from the 20th frame
-        		if frames[0] is not None:
-            			# Initial blending ratio for the 20th frame
-            			alpha = 0.1
-
-            			blended_frame = frames[0]
-            			for i in range(1, 4):
-               				if frames[i] is not None:
-                    				alpha += 0.3  # Increase blending ratio linearly
-                    				beta = 1.0 - alpha
-                    				blended_frame = cv2.addWeighted(frames[i], alpha, blended_frame, beta, 0.0)
-
-            			frame = blended_frame
+        			prev_frame = frame.copy()  # Store the current frame for the next iteration
         		else:
             			output = cv2.resize(output, (width, height))
             			frame = output
